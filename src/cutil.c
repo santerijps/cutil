@@ -2,8 +2,6 @@
 
 #pragma region Standard Library Includes
 
-#include <stdarg.h>
-
 #ifndef _INC_STDIO
 #include <stdio.h>
 #endif
@@ -20,7 +18,7 @@
 #pragma region Char and String Functions
 
 inline bool CharIsAlpha(char c) {
-  return CharIsLower(c) || CharIsUpper(c);
+  return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z');
 }
 
 inline bool CharIsDigit(char c) {
@@ -43,7 +41,7 @@ inline char CharToLower(char c) {
   return CharIsUpper(c) ? c + 32 : c;
 }
 
-inline unsigned long long StringLength(char *s) {
+inline unsigned long long StringLength(const char *s) {
   unsigned long long length = 0;
   while (*s++ != '\0') {
     length += 1;
@@ -51,51 +49,51 @@ inline unsigned long long StringLength(char *s) {
   return length;
 }
 
-inline bool StringIsAlpha(char *s) {
+inline bool StringIsAlpha(const char *s) {
   while (*s != '\0') {
     if (!CharIsAlpha(*s)) {
-      return 0;
+      return false;
     }
     s++;
   }
-  return 1;
+  return true;
 }
 
-inline bool StringIsNumeric(char *s) {
+inline bool StringIsNumeric(const char *s) {
   while (*s != '\0') {
     if (!CharIsDigit(*s)) {
-      return 0;
+      return false;
     }
     s++;
   }
-  return 1;
+  return true;
 }
 
-inline bool StringIsAlphaNumeric(char *s) {
+inline bool StringIsAlphaNumeric(const char *s) {
   while (*s != '\0') {
     if (!CharIsAlpha(*s) && !CharIsDigit(*s)) {
-      return 0;
+      return false;
     }
     s++;
   }
-  return 1;
+  return true;
 }
 
-inline void StringToUpper(char *buffer, char *s) {
+inline void StringToUpper(char *buffer, const char *s) {
   while (*s != '\0') {
     *buffer++ = *s - ('a' <= *s && *s <= 'z') * 32;
     s++;
   }
 }
 
-inline void StringToLower(char *buffer, char *s) {
+inline void StringToLower(char *buffer, const char *s) {
   while (*s != '\0') {
     *buffer++ = *s + ('A' <= *s && *s <= 'Z') * 32;
     s++;
   }
 }
 
-inline void StringToTitle(char *buffer, char *s) {
+inline void StringToTitle(char *buffer, const char *s) {
   char title = 1;
   while (*s != '\0') {
     char c = *s;
@@ -113,8 +111,7 @@ inline void StringToTitle(char *buffer, char *s) {
   }
 }
 
-inline void StringConcat(char *buffer, char *s1, char *s2) {
-  // sprintf(buffer, "%s%s", s1, s2);
+inline void StringConcat(char *buffer, const char *s1, const char *s2) {
   while (*s1 != '\0') {
     *buffer++ = *s1++;
   }
@@ -123,16 +120,48 @@ inline void StringConcat(char *buffer, char *s1, char *s2) {
   }
 }
 
-inline bool StringContainsChar(char *s, char search) {
-  while (*s != '\0') {
-    if (*s++ == search) {
-      return 1;
+inline void StringSlice(char *buffer, const char *s, long long start, long long end) {
+  if (start < end) {
+    while (start < end && s[start] != '\0') {
+      *buffer++ = s[start++];
     }
   }
-  return 0;
+  else if (start > end) {
+    while (start > end && start >= 0) {
+      *buffer++ = s[start--];
+    }
+  }
 }
 
-inline bool StringContainsString(char *s, char *search) {
+inline void StringHead(char *buffer, const char *s, unsigned long long n) {
+  while (n-- && *s != '\0') {
+    *buffer++ = *s++;
+  }
+}
+
+inline void StringTail(char *buffer, const char *s, unsigned long long n) {
+  return StringHead(buffer, s + StringLength(s) - n, n);
+}
+
+inline void StringReverse(char *buffer, const char *s) {
+  size_t i = StringLength(s);
+  if (i > 0) {
+    do {
+      *buffer++ = s[--i];
+    } while (i > 0);
+  }
+}
+
+inline bool StringContainsChar(const char *s, char search) {
+  while (*s != '\0') {
+    if (*s++ == search) {
+      return true;
+    }
+  }
+  return false;
+}
+
+inline bool StringContainsString(const char *s, const char *search) {
   if (StringLength(s) >= StringLength(search)) {
     while (*s != '\0') {
       for (size_t i = 0; search[i] != '\0'; i++) {
@@ -140,33 +169,73 @@ inline bool StringContainsString(char *s, char *search) {
           goto ContinueWhile;
         }
       }
-      return 1;
+      return true;
 ContinueWhile:
       s++;
     }
   }
-  return 0;
+  return false;
 }
 
-inline bool StringContainsAny(char *s, char *chars) {
+inline bool StringContainsAny(const char *s, const char *chars) {
   while (*s != '\0') {
     for (size_t i = 0; chars[i] != '\0'; i++) {
       if (*s == chars[i]) {
-        return 1;
+        return true;
       }
     }
     s++;
   }
-  return 0;
+  return false;
 }
 
-inline bool StringEquals(char *s1, char *s2) {
+inline bool StringIn(const char *s, const char *haystack, const char *separator) {
+  size_t i = 0, j = 0;
+  size_t separator_length = StringLength(separator);
+  do {
+    if (StringStartsWith(haystack + j, separator) || haystack[j] == '\0') {
+      for (size_t k = i, h = 0; k < j && s[h] != '\0'; k++, h++) {
+        if (haystack[k] != s[h]) {
+          goto ContinueDoWhile;
+        }
+      }
+      return true;
+ContinueDoWhile:
+      i = j + separator_length;
+    }
+  } while (haystack[j++] != '\0');
+  return false;
+}
+
+inline bool StringEquals(const char *s1, const char *s2) {
   do {
     if (*s1 != *s2) {
-      return 0;
+      return false;
     }
   } while (*s1++ != '\0' && *s2++ != '\0');
-  return 1;
+  return true;
+}
+
+inline bool StringStartsWith(const char *s1, const char *s2) {
+  size_t s2_length = StringLength(s2);
+  if (StringLength(s1) < s2_length) {
+    return false;
+  }
+  for (size_t i = 0; i < s2_length; i++) {
+    if (s1[i] != s2[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+inline bool StringEndsWith(const char *s1, const char *s2) {
+  size_t s1_length = StringLength(s1);
+  size_t s2_length = StringLength(s2);
+  if (s1_length < s2_length) {
+    return false;
+  }
+  return StringEquals(s1 + (s1_length - s2_length), s2);
 }
 
 #pragma endregion
@@ -242,28 +311,6 @@ inline bool StringBuilderAddString(StringBuilder *sb, char *s) {
   while (*s != '\0') {
     sb->string[sb->length++] = *s++;
   }
-  return true;
-}
-
-bool StringBuilderPrintf(StringBuilder *sb, char *format, ...) {
-  char buffer[512] = {0};
-  va_list args;
-  va_start(args, format);
-  while (*format != '\0') {
-    if (*format == '%') {
-      char specifier[8] = {0};
-      for (size_t i = 0; i < sizeof(specifier) && format[i] != '\0'; i++) {
-        specifier[i] = *(format + i);
-        if (CharIsAlpha(specifier[i])) {
-          break;
-        }
-      }
-      strcat(buffer, specifier)
-      printf("Specifier: %s\n", specifier);
-    }
-    format++;
-  }
-  va_end(args);
   return true;
 }
 

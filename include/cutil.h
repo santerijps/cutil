@@ -22,22 +22,28 @@ bool CharIsLower(char c);
 char CharToUpper(char c);
 char CharToLower(char c);
 
-unsigned long long StringLength(char *s);
+unsigned long long StringLength(const char *s);
 
-bool StringIsAlpha(char *s);
-bool StringIsNumeric(char *s);
-bool StringIsAlphaNumeric(char *s);
+bool StringIsAlpha(const char *s);
+bool StringIsNumeric(const char *s);
+bool StringIsAlphaNumeric(const char *s);
 
-void StringToUpper(char *buffer, char *s);
-void StringToLower(char *buffer, char *s);
-void StringToTitle(char *buffer, char *s);
+void StringToUpper(char *buffer, const char *s);
+void StringToLower(char *buffer, const char *s);
+void StringToTitle(char *buffer, const char *s);
+void StringConcat(char *buffer, const char *s1, const char *s2);
+void StringSlice(char *buffer, const char *s, long long start, long long end);
+void StringHead(char *buffer, const char *s, unsigned long long n);
+void StringTail(char *buffer, const char *s, unsigned long long n);
+void StringReverse(char *buffer, const char *s);
 
-
-void StringConcat(char *buffer, char *s1, char *s2);
-bool StringContainsChar(char *s, char search);
-bool StringContainsString(char *s, char *search);
-bool StringContainsAny(char *s, char *chars);
-bool StringEquals(char *s1, char *s2);
+bool StringContainsChar(const char *s, char search);
+bool StringContainsString(const char *s, const char *search);
+bool StringContainsAny(const char *s, const char *chars);
+bool StringIn(const char *s, const char *haystack, const char *separator);
+bool StringEquals(const char *s1, const char *s2);
+bool StringStartsWith(const char *s1, const char *s2);
+bool StringEndsWith(const char *s1, const char *s2);
 
 /*
 STRING BUILDER FUNCTIONS
@@ -58,6 +64,5 @@ void DestroyStringBuilder(StringBuilder *sb);
 bool StringBuilderIncreaseCapacity(StringBuilder *sb, unsigned long long padding);
 bool StringBuilderAddChar(StringBuilder *sb, char c);
 bool StringBuilderAddString(StringBuilder *sb, char *s);
-bool StringBuilderPrintf(StringBuilder *sb, char *format, ...);
 
 #endif
