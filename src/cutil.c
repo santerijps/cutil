@@ -1,9 +1,16 @@
 #include "../include/cutil.h"
 
 // Function naming rules:
-// Create   -> Returns an object
-// New      -> Returns a pointer to an allocated object
-// Allocate -> Returns a boolean, if allocation for object was successful
+//
+// Structs/Objects:
+// CreateObject   -> Returns an object
+// NewObject      -> Returns a pointer to an allocated object
+// AllocateObject -> Returns a boolean, if allocation for object was successful
+//
+// Functions:
+// NamespaceFunction         -> Pure function
+// NamespaceFunctionToBuffer -> Writes result to buffer, returns boolean
+// NamespaceFunctionAlloc    -> Returns new heap allocated memory as the result
 
 #pragma region Includes
 
@@ -56,11 +63,11 @@ inline bool CharIn(char c, const char *haystack) {
   return false;
 }
 
-inline char CharToUpper(char c) {
+inline char CharUpper(char c) {
   return CharIsLower(c) ? c - 32 : c;
 }
 
-inline char CharToLower(char c) {
+inline char CharLower(char c) {
   return CharIsUpper(c) ? c + 32 : c;
 }
 
@@ -102,7 +109,7 @@ inline bool StringIsAlphaNumeric(const char *s) {
   return true;
 }
 
-inline bool StringToUpper(char *buffer, size_t buffer_size, const char *s) {
+inline bool StringUpperToBuffer(char *buffer, size_t buffer_size, const char *s) {
   while (*s != '\0') {
     if (--buffer_size == 0) {
       return false;
@@ -113,14 +120,7 @@ inline bool StringToUpper(char *buffer, size_t buffer_size, const char *s) {
   return true;
 }
 
-inline void StringToUpperInPlace(char *s) {
-  while (*s != '\0') {
-    *s = *s - ('a' <= *s && *s <= 'z') * 32;
-    s++;
-  }
-}
-
-inline char* StringToUpperAlloc(const char *s) {
+inline char* StringUpperAlloc(const char *s) {
   StringBuilder sb = CreateDynamicStringBuilder(StringLength(s) + 1);
   while (*s != '\0') {
     StringBuilderAddChar(&sb, *s - ('a' <= *s && *s <= 'z') * 32);
@@ -129,7 +129,7 @@ inline char* StringToUpperAlloc(const char *s) {
   return sb.string;
 }
 
-inline bool StringToLower(char *buffer, size_t buffer_size, const char *s) {
+inline bool StringLowerToBuffer(char *buffer, size_t buffer_size, const char *s) {
   while (*s != '\0') {
     if (--buffer_size == 0) {
       return false;
@@ -140,14 +140,7 @@ inline bool StringToLower(char *buffer, size_t buffer_size, const char *s) {
   return true;
 }
 
-inline void StringToLowerInPlace(char *s) {
-  while (*s != '\0') {
-    *s = *s + ('A' <= *s && *s <= 'Z') * 32;
-    s++;
-  }
-}
-
-inline char* StringToLowerAlloc(const char *s) {
+inline char* StringLowerAlloc(const char *s) {
   StringBuilder sb = CreateDynamicStringBuilder(StringLength(s) + 1);
   while (*s != '\0') {
     StringBuilderAddChar(&sb, *s + ('A' <= *s && *s <= 'Z') * 32);
@@ -156,7 +149,7 @@ inline char* StringToLowerAlloc(const char *s) {
   return sb.string;
 }
 
-inline bool StringToTitle(char *buffer, size_t buffer_size, const char *s) {
+inline bool StringTitleToBuffer(char *buffer, size_t buffer_size, const char *s) {
   bool title = true;
   while (*s != '\0') {
     if (--buffer_size == 0) {
@@ -168,7 +161,7 @@ inline bool StringToTitle(char *buffer, size_t buffer_size, const char *s) {
     }
     else if (CharIsLower(c)) {
       if (title) {
-        c = CharToUpper(c);
+        c = CharUpper(c);
         title = false;
       }
     }
@@ -178,7 +171,7 @@ inline bool StringToTitle(char *buffer, size_t buffer_size, const char *s) {
   return true;
 }
 
-inline void StringToTitleInPlace(char *s) {
+inline void StringTitleInPlace(char *s) {
   bool title = true;
   while (*s != '\0') {
     char c = *s;
@@ -187,7 +180,7 @@ inline void StringToTitleInPlace(char *s) {
     }
     else if (CharIsLower(c)) {
       if (title) {
-        c = CharToUpper(c);
+        c = CharUpper(c);
         title = false;
       }
     }
@@ -196,7 +189,7 @@ inline void StringToTitleInPlace(char *s) {
   }
 }
 
-inline char* StringToTitleAlloc(const char *s) {
+inline char* StringTitleAlloc(const char *s) {
   StringBuilder sb = CreateDynamicStringBuilder(StringLength(s) + 1);
   bool title = true;
   while (*s != '\0') {
@@ -206,7 +199,7 @@ inline char* StringToTitleAlloc(const char *s) {
     }
     else if (CharIsLower(c)) {
       if (title) {
-        c = CharToUpper(c);
+        c = CharUpper(c);
         title = false;
       }
     }
@@ -216,7 +209,7 @@ inline char* StringToTitleAlloc(const char *s) {
   return sb.string;
 }
 
-inline bool StringConcat(char *buffer, size_t buffer_size, const char *s1, const char *s2) {
+inline bool StringConcatToBuffer(char *buffer, size_t buffer_size, const char *s1, const char *s2) {
   while (*s1 != '\0') {
     if (--buffer_size == 0) {
       return false;
@@ -243,7 +236,7 @@ inline char* StringConcatAlloc(const char *s1, const char *s2) {
   return sb.string;
 }
 
-inline bool StringSlice(char *buffer, size_t buffer_size, const char *s, long long start, long long end) {
+inline bool StringSliceToBuffer(char *buffer, size_t buffer_size, const char *s, int64_t start, int64_t end) {
   if (start < end) {
     while (start < end && s[start] != '\0') {
       if (--buffer_size == 0) {
@@ -263,7 +256,7 @@ inline bool StringSlice(char *buffer, size_t buffer_size, const char *s, long lo
   return true;
 }
 
-inline char* StringSliceAlloc(const char *s, long long start, long long end) {
+inline char* StringSliceAlloc(const char *s, int64_t start, int64_t end) {
   StringBuilder sb = CreateDynamicStringBuilder(0);
   if (start < end) {
     while (start < end && s[start] != '\0') {
@@ -278,7 +271,7 @@ inline char* StringSliceAlloc(const char *s, long long start, long long end) {
   return sb.string;
 }
 
-inline bool StringFirstNChars(char *buffer, size_t buffer_size, const char *s, size_t n) {
+inline bool StringFirstNCharsToBuffer(char *buffer, size_t buffer_size, const char *s, uint64_t n) {
   while (n-- && *s != '\0') {
     if (--buffer_size == 0) {
       return false;
@@ -288,7 +281,7 @@ inline bool StringFirstNChars(char *buffer, size_t buffer_size, const char *s, s
   return true;
 }
 
-inline char* StringFirstNCharsAlloc(const char *s, size_t n) {
+inline char* StringFirstNCharsAlloc(const char *s, uint64_t n) {
   StringBuilder sb = CreateDynamicStringBuilder(n + 1);
   while (n-- && *s != '\0') {
     StringBuilderAddChar(&sb, *s++);
@@ -296,15 +289,15 @@ inline char* StringFirstNCharsAlloc(const char *s, size_t n) {
   return sb.string;
 }
 
-inline bool StringLastNChars(char *buffer, size_t buffer_size, const char *s, size_t n) {
-  return StringFirstNChars(buffer, buffer_size,s + StringLength(s) - n, n);
+inline bool StringLastNCharsToBuffer(char *buffer, size_t buffer_size, const char *s, uint64_t n) {
+  return StringFirstNCharsToBuffer(buffer, buffer_size,s + StringLength(s) - n, n);
 }
 
-inline char* StringLastNCharsAlloc(const char *s, size_t n) {
+inline char* StringLastNCharsAlloc(const char *s, uint64_t n) {
   return StringFirstNCharsAlloc(s + StringLength(s) - n, n);
 }
 
-inline bool StringReverse(char *buffer, size_t buffer_size, const char *s) {
+inline bool StringReverseToBuffer(char *buffer, size_t buffer_size, const char *s) {
   size_t i = StringLength(s);
   if (i > 0) {
     do {
@@ -315,20 +308,6 @@ inline bool StringReverse(char *buffer, size_t buffer_size, const char *s) {
     } while (i > 0);
   }
   return true;
-}
-
-inline void StringReverseInPlace(char *s) {
-  size_t i = 0, j = StringLength(s);
-  if (j > 0) {
-    j -= 1;
-    while (i < j) {
-      char tmp = s[i];
-      s[i] = s[j];
-      s[j] = tmp;
-      i += 1;
-      j -= 1;
-    }
-  }
 }
 
 inline char* StringReverseAlloc(const char *s) {
@@ -343,7 +322,7 @@ inline char* StringReverseAlloc(const char *s) {
   return sb.string;
 }
 
-inline bool StringReplace(char *buffer, size_t buffer_size, const char *s, const char *search, const char *replace) {
+inline bool StringReplaceToBuffer(char *buffer, size_t buffer_size, const char *s, const char *search, const char *replace) {
   size_t search_length = StringLength(search);
   size_t replace_length = StringLength(replace);
   while (*s != '\0') {
@@ -379,7 +358,7 @@ inline char* StringReplaceAlloc(const char *s, const char *search, const char *r
   return sb.string;
 }
 
-inline bool StringRepeat(char *buffer, size_t buffer_size, const char *s, size_t n) {
+inline bool StringRepeatToBuffer(char *buffer, size_t buffer_size, const char *s, uint64_t n) {
   size_t length = StringLength(s);
   if (length * n > buffer_size - 1) {
     return false;
@@ -486,6 +465,61 @@ inline bool StringEndsWith(const char *s1, const char *s2) {
   return StringEquals(s1 + (s1_length - s2_length), s2);
 }
 
+inline int64_t StringFirstIndexOf(const char *s, const char *search) {
+  for (int64_t i = 0; s[i] != '\0'; i++) {
+    if (StringStartsWith(s + i, search)) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+inline int64_t StringLastIndexOf(const char *s, const char *search) {
+  for (int64_t i = StringLength(s) - 1; i >= 0; i--) {
+    if (StringStartsWith(s + i, search)) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+inline char* StringDuplicate(const char *s) {
+  return strdup(s);
+}
+
+inline bool StringsJoinToBuffer(char *buffer, size_t buffer_size, char **strings, uint64_t number_of_strings, char *separator) {
+  size_t separator_length = StringLength(separator);
+  for (size_t i = 0; i < number_of_strings; i++) {
+    size_t string_length = StringLength(strings[i]);
+    if (string_length < buffer_size) {
+      strcat(buffer, strings[i]);
+      buffer_size -= string_length;
+    } else {
+      return false;
+    }
+    if (i + 1 < number_of_strings) {
+      if (separator_length < buffer_size) {
+        strcat(buffer, separator);
+        buffer_size -= separator_length;
+      } else {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+inline char* StringsJoinAlloc(char **strings, uint64_t number_of_strings, char *separator) {
+  StringBuilder sb = CreateDynamicStringBuilder(1);
+  for (size_t i = 0; i < number_of_strings; i++) {
+    StringBuilderAddString(&sb, strings[i]);
+    if (i + 1 < number_of_strings) {
+      StringBuilderAddString(&sb, separator);
+    }
+  }
+  return sb.string;
+}
+
 #pragma endregion
 #pragma region String Builder
 
@@ -590,7 +624,7 @@ inline bool StringBuilderReadFile(StringBuilder *sb, const char *file_path) {
   if (f == NULL) {
     return false;
   }
-  size_t n;
+  uint64_t n;
   do {
     char fread_buffer[FREAD_BUFFER_SIZE] = {0};
     n = fread(fread_buffer, sizeof(char), FREAD_BUFFER_SIZE, f);
@@ -645,6 +679,81 @@ inline bool CreateNewFile(const char *file_path) {
 
 inline bool RemoveFile(const char *file_path) {
   return remove(file_path) == 0;
+}
+
+inline char* PathBaseName(const char *file_path) {
+  int64_t index = StringLastIndexOf(file_path, "/");
+  if (index == -1) {
+    return (char*)file_path;
+  } else {
+    return (char*)(file_path + index + 1);
+  }
+}
+
+inline bool PathBaseNameToBuffer(char *buffer, size_t buffer_size, const char *file_path) {
+  char *base_name = PathBaseName(file_path);
+  if (StringLength(base_name) < buffer_size) {
+    strcpy(buffer, base_name);
+    return true;
+  }
+  return false;
+}
+
+inline bool PathDirNameToBuffer(char *buffer, size_t buffer_size, const char *file_path) {
+  int64_t index = StringLastIndexOf(file_path, "/");
+  if (index == -1) {
+    size_t length = StringLength(file_path);
+    if (length < buffer_size) {
+      strcpy(buffer, file_path);
+      return true;
+    }
+    return false;
+  }
+  return StringSliceToBuffer(buffer, buffer_size, file_path, 0, index);
+}
+
+inline char* PathDirNameAlloc(const char *file_path) {
+  int64_t index = StringLastIndexOf(file_path, "/");
+  if (index == -1) {
+    return strdup(file_path);
+  }
+  return StringSliceAlloc(file_path, 0, index);
+}
+
+inline char* PathExt(const char *file_path) {
+  int64_t index = StringLastIndexOf(file_path, "/");
+  if (index == -1) {
+    index = 0;
+  }
+  int64_t dot_index = StringLastIndexOf(file_path + index, ".");
+  if (dot_index == -1) {
+    return NULL;
+  }
+  return (char*)(file_path + index + dot_index);
+}
+
+inline bool PathExtToBuffer(char *buffer, size_t buffer_size, const char *file_path) {
+  int64_t index = StringLastIndexOf(file_path, "/");
+  if (index == -1) {
+    index = 0;
+  }
+  int64_t dot_index = StringLastIndexOf(file_path + index, ".");
+  if (dot_index == -1) {
+    return false;
+  }
+  return StringSliceToBuffer(buffer, buffer_size, file_path, index + dot_index, StringLength(file_path));
+}
+
+inline char* PathExtAlloc(const char *file_path) {
+  int64_t index = StringLastIndexOf(file_path, "/");
+  if (index == -1) {
+    index = 0;
+  }
+  int64_t dot_index = StringLastIndexOf(file_path + index, ".");
+  if (dot_index == -1) {
+    return NULL;
+  }
+  return StringSliceAlloc(file_path, index + dot_index, StringLength(file_path));
 }
 
 #pragma endregion
@@ -702,7 +811,7 @@ inline bool WriteToFile(const char *file_path, const char *s) {
     return false;
   }
   size_t length = StringLength(s);
-  size_t n = fwrite(s, sizeof(char), length, f);
+  uint64_t n = fwrite(s, sizeof(char), length, f);
   return n == length && fclose(f) == 0;
 }
 
@@ -712,7 +821,7 @@ inline bool AppendToFile(const char *file_path, const char *s) {
     return false;
   }
   size_t length = StringLength(s);
-  size_t n = fwrite(s, sizeof(char), length, f);
+  uint64_t n = fwrite(s, sizeof(char), length, f);
   return n == length && fclose(f) == 0;
 }
 
@@ -759,19 +868,19 @@ inline void FreeAllocation(Allocation *a) {
   free(a->memory);
 }
 
-inline bool CreateMemoryAllocation(MemoryAllocation *ma, size_t size_of_item, size_t number_of_items) {
+inline bool CreateMemoryAllocation(MemoryAllocation *ma, size_t size_of_item, uint64_t number_of_items) {
   ma->number_of_items = number_of_items;
   ma->size_of_item = size_of_item;
   ma->memory = calloc(number_of_items, size_of_item);
   return ma->memory != NULL;
 }
 
-inline bool ResizeMemoryAllocation(MemoryAllocation *ma, size_t number_of_items) {
+inline bool ResizeMemoryAllocation(MemoryAllocation *ma, uint64_t number_of_items) {
   if (number_of_items == ma->number_of_items) {
     return true;
   }
   size_t old_size = ma->size_of_item * ma->number_of_items;
-  size_t new_size = ma->size_of_item * number_of_items;
+  uint64_t new_size = ma->size_of_item * number_of_items;
   ma->memory = realloc(ma->memory, new_size);
   if (ma->memory == NULL) {
     return false;
@@ -791,13 +900,90 @@ inline void FreeMemoryAllocation(MemoryAllocation *ma) {
 /*
 djb2 hash: http://www.cse.yorku.ca/~oz/hash.html
 */
-inline unsigned long long Hash(const char *s) {
+inline uint64_t Hash(const char *s) {
   unsigned char *us = (unsigned char*)s;
-  unsigned long long hash = 5381;
+  uint64_t hash = 5381;
   while (*us != '\0') {
     hash = ((hash << 5) + hash) + *us++;
   }
   return hash;
+}
+
+inline Url UrlParse(const char *s) {
+  Url url = {0};
+  int64_t scheme_index = StringFirstIndexOf(s, "://");
+  int64_t host_begin_index = 0;
+  int64_t port_begin_index = 0;
+  int64_t path_begin_index = 0;
+  int64_t query_begin_index = 0;
+  if (scheme_index != -1) {
+    StringSliceToBuffer(url.scheme, ArraySize(url.scheme), s, 0, scheme_index);
+    host_begin_index = scheme_index + 3;
+  }
+  for (int64_t i = host_begin_index + 1;; i++) {
+    switch (s[i]) {
+      case ':':
+        StringSliceToBuffer(url.host, ArraySize(url.host), s, host_begin_index, i);
+        port_begin_index = i + 1;
+        goto ReadPort;
+      case '/':
+        StringSliceToBuffer(url.host, ArraySize(url.host), s, host_begin_index, i);
+        path_begin_index = i;
+        goto ReadPath;
+      case '?':
+        StringSliceToBuffer(url.host, ArraySize(url.host), s, host_begin_index, i);
+        query_begin_index = i;
+        goto ReadQuery;
+      case '\0':
+        StringSliceToBuffer(url.host, ArraySize(url.host), s, host_begin_index, i);
+        goto FunctionReturn;
+    }
+  }
+  ReadPort: {
+    for (int64_t i = port_begin_index;; i++) {
+      switch (s[i]) {
+        case '/':
+          StringSliceToBuffer(url.port, ArraySize(url.port), s, port_begin_index, i);
+          path_begin_index = i;
+          goto ReadPath;
+        case '?':
+          StringSliceToBuffer(url.port, ArraySize(url.port), s, port_begin_index, i);
+          query_begin_index = i;
+          goto ReadQuery;
+        case '\0':
+          StringSliceToBuffer(url.port, ArraySize(url.port), s, port_begin_index, i);
+          goto FunctionReturn;
+      }
+    }
+  }
+  ReadPath: {
+    for (int64_t i = path_begin_index;; i++) {
+      switch (s[i]) {
+        case '?':
+          StringSliceToBuffer(url.path, ArraySize(url.path), s, path_begin_index, i);
+          query_begin_index = i;
+          goto ReadQuery;
+        case '\0':
+          StringSliceToBuffer(url.path, ArraySize(url.path), s, path_begin_index, i);
+          goto FunctionReturn;
+      }
+    }
+  }
+  ReadQuery: {
+    url.query = (char*)(s + query_begin_index);
+  }
+  FunctionReturn: {
+    if (url.path[0] == '\0') {
+      url.path[0] = '/';
+    }
+    if (StringEquals(url.scheme, "http")) {
+      strcpy(url.port, "80");
+    }
+    else if (StringEquals(url.scheme, "https")) {
+      strcpy(url.port, "443");
+    }
+    return url;
+  }
 }
 
 #pragma endregion
@@ -814,11 +1000,11 @@ inline int StringToInt32(const char *s) {
   return atoi(s);
 }
 
-inline long long StringToInt64(const char *s) {
+inline int64_t StringToInt64(const char *s) {
   return atoll(s);
 }
 
-inline bool CharToString(char *buffer, size_t buffer_size, char c) {
+inline bool CharToStringToBuffer(char *buffer, size_t buffer_size, char c) {
   if (buffer_size > 1) {
     buffer[0] = c;
     buffer[1] = 0;
@@ -833,16 +1019,16 @@ inline char* CharToStringAlloc(char c) {
   return sb.string;
 }
 
-inline bool Int32ToString(char *buffer, size_t buffer_size, int x) {
+inline bool Int32ToStringToBuffer(char *buffer, size_t buffer_size, int x) {
   return _itoa_s(x, buffer, buffer_size, 10) == 0;
 }
 
-inline bool Int64ToString(char *buffer, size_t buffer_size, long long x) {
+inline bool Int64ToStringToBuffer(char *buffer, size_t buffer_size, int64_t x) {
   snprintf(buffer, buffer_size, "%lld", x);
   return true;
 }
 
-inline bool Uint64ToString(char *buffer, size_t buffer_size, size_t x) {
+inline bool Uint64ToStringToBuffer(char *buffer, size_t buffer_size, uint64_t x) {
   snprintf(buffer, buffer_size, "%llu", x);
   return true;
 }
