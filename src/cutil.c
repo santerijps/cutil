@@ -12,7 +12,20 @@
 // NamespaceFunctionToBuffer -> Writes result to buffer, returns boolean
 // NamespaceFunctionAlloc    -> Returns new heap allocated memory as the result
 
+/*
+
+# References
+
+- Fast int to string: http://www.strudel.org.uk/itoa/
+- djb2 hash: http://www.cse.yorku.ca/~oz/hash.html
+
+*/
+
 #pragma region Includes
+
+#ifndef _STDARG_H
+#include <stdarg.h>
+#endif
 
 #ifndef _INC_STDIO
 #include <stdio.h>
@@ -520,6 +533,198 @@ inline char* StringsJoinAlloc(char **strings, uint64_t number_of_strings, char *
   return sb.string;
 }
 
+void Sprintf(char *buffer, size_t buffer_size, const char *format, ...) {
+  va_list valist;
+  va_start(valist, format);
+  while (*format != '\0') {
+    if (*format != '%') {
+      *buffer++ = *format++;
+      if (--buffer_size - 1 == 0) {
+        goto End;
+      }
+      continue;
+    }
+    switch (*(++format)) {
+      case 'd':
+      case 'i': {
+        char s[20] = {0};
+        size_t i = 0;
+        Int64ToStringToBuffer(s, ArraySize(s), va_arg(valist, int64_t), 10);
+        while (s[i] != '\0') {
+          *buffer++ = s[i++];
+          if (--buffer_size - 1 == 0) {
+            goto End;
+          }
+        }
+        break;
+      }
+      case 'u': {
+        char s[21] = {0};
+        size_t i = 0;
+        Uint64ToStringToBuffer(s, ArraySize(s), va_arg(valist, uint64_t), 10);
+        while (s[i] != '\0') {
+          *buffer++ = s[i++];
+          if (--buffer_size - 1 == 0) {
+            goto End;
+          }
+        }
+        break;
+      }
+      case 'c':
+        *buffer++ = (char)va_arg(valist, int);
+        if (--buffer_size - 1 == 0) {
+          goto End;
+        }
+        break;
+      case 's': {
+        char *s = va_arg(valist, char*);
+        while (*s != '\0') {
+          *buffer++ = *s;
+          if (--buffer_size - 1 == 0) {
+            goto End;
+          }
+          s++;
+        }
+        break;
+      }
+      case 'b': {
+        char *s = va_arg(valist, int) ? "true" : "false";
+        while (*s != '\0') {
+          *buffer++ = *s;
+          if (--buffer_size - 1 == 0) {
+            goto End;
+          }
+          s++;
+        }
+        break;
+      }
+      case 'B': {
+        char *s = va_arg(valist, int) ? "TRUE" : "FALSE";
+        while (*s != '\0') {
+          *buffer++ = *s;
+          if (--buffer_size - 1 == 0) {
+            goto End;
+          }
+          s++;
+        }
+        break;
+      }
+      default:
+        *buffer++ = '%';
+        if (--buffer_size - 1 == 0) {
+          goto End;
+        }
+        *buffer++ = *format;
+        if (--buffer_size - 1 == 0) {
+          goto End;
+        }
+        break;
+    }
+    format++;
+  }
+End:
+  va_end(valist);
+}
+
+void Sappendf(char *buffer, size_t buffer_size, const char *format, ...) {
+  while (*buffer != '\0') {
+    buffer++;
+    if (--buffer_size == 0) {
+      goto End;
+    }
+  }
+  va_list valist;
+  va_start(valist, format);
+  while (*format != '\0') {
+    if (*format != '%') {
+      *buffer++ = *format++;
+      if (--buffer_size == 0) {
+        goto End;
+      }
+      continue;
+    }
+    switch (*(++format)) {
+      case 'd':
+      case 'i': {
+        char s[20] = {0};
+        size_t i = 0;
+        Int64ToStringToBuffer(s, ArraySize(s), va_arg(valist, int64_t), 10);
+        while (s[i] != '\0') {
+          *buffer++ = s[i++];
+          if (--buffer_size == 0) {
+            goto End;
+          }
+        }
+        break;
+      }
+      case 'u': {
+        char s[21] = {0};
+        size_t i = 0;
+        Uint64ToStringToBuffer(s, ArraySize(s), va_arg(valist, uint64_t), 10);
+        while (s[i] != '\0') {
+          *buffer++ = s[i++];
+          if (--buffer_size == 0) {
+            goto End;
+          }
+        }
+        break;
+      }
+      case 'c':
+        *buffer++ = (char)va_arg(valist, int);
+        if (--buffer_size == 0) {
+          goto End;
+        }
+        break;
+      case 's': {
+        char *s = va_arg(valist, char*);
+        while (*s != '\0') {
+          *buffer++ = *s;
+          if (--buffer_size == 0) {
+            goto End;
+          }
+          s++;
+        }
+        break;
+      }
+      case 'b': {
+        char *s = va_arg(valist, int) ? "true" : "false";
+        while (*s != '\0') {
+          *buffer++ = *s;
+          if (--buffer_size == 0) {
+            goto End;
+          }
+          s++;
+        }
+        break;
+      }
+      case 'B': {
+        char *s = va_arg(valist, int) ? "TRUE" : "FALSE";
+        while (*s != '\0') {
+          *buffer++ = *s;
+          if (--buffer_size == 0) {
+            goto End;
+          }
+          s++;
+        }
+        break;
+      }
+      default:
+        *buffer++ = '%';
+        if (--buffer_size == 0) {
+          goto End;
+        }
+        *buffer++ = *format;
+        if (--buffer_size == 0) {
+          goto End;
+        }
+        break;
+    }
+    format++;
+  }
+End:
+  va_end(valist);
+}
+
 #pragma endregion
 #pragma region String Builder
 
@@ -644,6 +849,72 @@ inline bool StringBuilderClear(StringBuilder *sb) {
     return true;
   }
   return false;
+}
+
+inline bool StringBuilderPrintf(StringBuilder *sb, const char *format, ...) {
+  if (sb == NULL) {
+    return false;
+  }
+  va_list valist;
+  va_start(valist, format);
+  while (*format != '\0') {
+    if (*format != '%') {
+      if (!StringBuilderAddChar(sb, *format++)) {
+        return false;
+      }
+      continue;
+    }
+    switch (*(++format)) {
+      case 'd':
+      case 'i': {
+        char buffer[20] = {0};
+        Int64ToStringToBuffer(buffer, ArraySize(buffer), va_arg(valist, int64_t), 10);
+        if (!StringBuilderAddString(sb, buffer)) {
+          return false;
+        }
+        break;
+      }
+      case 'u': {
+        char buffer[21] = {0};
+        Uint64ToStringToBuffer(buffer, ArraySize(buffer), va_arg(valist, uint64_t), 10);
+        if (!StringBuilderAddString(sb, buffer)) {
+          return false;
+        }
+        break;
+      }
+      case 'c':
+        if (!StringBuilderAddChar(sb, (char)va_arg(valist, int))) {
+          return false;
+        }
+        break;
+      case 's':
+        if (!StringBuilderAddString(sb, va_arg(valist, char*))) {
+          return false;
+        }
+        break;
+      case 'b':
+        if (!StringBuilderAddString(sb, va_arg(valist, int) ? "true" : "false")) {
+          return false;
+        }
+        break;
+      case 'B':
+        if (!StringBuilderAddString(sb, va_arg(valist, int) ? "TRUE" : "FALSE")) {
+          return false;
+        }
+        break;
+      default:
+        if (!StringBuilderAddChar(sb, '%')) {
+          return false;
+        }
+        if (!StringBuilderAddChar(sb, *format)) {
+          return false;
+        }
+        break;
+    }
+    format++;
+  }
+  va_end(valist);
+  return true;
 }
 
 #pragma endregion
@@ -825,16 +1096,245 @@ inline bool AppendToFile(const char *file_path, const char *s) {
   return n == length && fclose(f) == 0;
 }
 
-inline void WriteToStdOut(const char *s) {
+void WriteStringToFile(FILE *file, const char *s) {
+  while (*s != '\0') {
+    putc(*s++, file);
+  }
+}
+
+inline void WriteStringToStdOut(const char *s) {
   while (*s != '\0') {
     putc(*s++, stdout);
   }
 }
 
-inline void WriteToStdErr(const char *s) {
+inline void WriteStringToStdErr(const char *s) {
   while (*s != '\0') {
     putc(*s++, stderr);
   }
+}
+
+void WriteInt64ToFile(FILE *file, int64_t value) {
+  char buffer[20] = {0};
+	char *ptr = buffer;
+	while (true) {
+		int64_t tmp = value;
+		value /= 10;
+		*ptr++ = "zyxwvutsrqponmlkjihgfedcba9876543210123456789abcdefghijklmnopqrstuvwxyz"[35 + (tmp - value * 10)];
+		if (value == 0) {
+			if (tmp < 0) {
+				*ptr++ = '-';
+			}
+			*ptr-- = '\0';
+			break;
+		}
+	}
+	while(ptr >= buffer) {
+		putc(*ptr--, file);
+	}
+}
+
+void WriteUint64ToFile(FILE *file, uint64_t value) {
+  char buffer[21] = {0};
+	char *ptr = buffer;
+	while (true) {
+		uint64_t tmp = value;
+		value /= 10;
+		*ptr++ = "zyxwvutsrqponmlkjihgfedcba9876543210123456789abcdefghijklmnopqrstuvwxyz"[35 + (tmp - value * 10)];
+		if (value == 0) {
+			*ptr-- = '\0';
+			break;
+		}
+	}
+	while(ptr >= buffer) {
+		putc(*ptr--, file);
+	}
+}
+
+inline void WriteInt64ToStdOut(int64_t value) {
+	WriteInt64ToFile(stdout, value);
+}
+
+inline void WriteInt64ToStdErr(int64_t value) {
+	WriteInt64ToFile(stderr, value);
+}
+
+inline void WriteUint64ToStdOut(uint64_t value) {
+	WriteUint64ToFile(stdout, value);
+}
+
+inline void WriteUint64ToStdErr(uint64_t value) {
+	WriteUint64ToFile(stderr, value);
+}
+
+void Printf(const char *format, ...) {
+  va_list valist;
+  va_start(valist, format);
+  while (*format != '\0') {
+    if (*format != '%') {
+      putchar(*format++);
+      continue;
+    }
+    switch (*(++format)) {
+      case 'd':
+      case 'i':
+        WriteInt64ToStdOut(va_arg(valist, int64_t));
+        break;
+      case 'u':
+        WriteUint64ToStdOut(va_arg(valist, uint64_t));
+        break;
+      case 'c':
+        putchar((char)va_arg(valist, int));
+        break;
+      case 's':
+        WriteStringToStdOut(va_arg(valist, char*));
+        break;
+      case 'b':
+        WriteStringToStdOut(va_arg(valist, int) ? "true" : "false");
+        break;
+      case 'B':
+        WriteStringToStdOut(va_arg(valist, int) ? "TRUE" : "FALSE");
+        break;
+      default:
+        putchar('%');
+        putchar(*format);
+        break;
+    }
+    format++;
+  }
+  va_end(valist);
+}
+
+void Errorf(const char *format, ...) {
+  va_list valist;
+  va_start(valist, format);
+  while (*format != '\0') {
+    if (*format != '%') {
+      putc(*format++, stderr);
+      continue;
+    }
+    switch (*(++format)) {
+      case 'd':
+      case 'i':
+        WriteInt64ToStdErr(va_arg(valist, int64_t));
+        break;
+      case 'u':
+        WriteUint64ToStdErr(va_arg(valist, uint64_t));
+        break;
+      case 'c':
+        putc((char)va_arg(valist, int), stderr);
+        break;
+      case 's':
+        WriteStringToStdErr(va_arg(valist, char*));
+        break;
+      case 'b':
+        WriteStringToStdErr(va_arg(valist, int) ? "true" : "false");
+        break;
+      case 'B':
+        WriteStringToStdErr(va_arg(valist, int) ? "TRUE" : "FALSE");
+        break;
+      default:
+        putc('%', stderr);
+        putc(*format, stderr);
+        break;
+    }
+    format++;
+  }
+  va_end(valist);
+}
+
+bool WriteFormatToFile(const char *file_path, const char *format, ...) {
+  FILE *f = fopen(file_path, "wb");
+  if (f == NULL) {
+    return false;
+  }
+  va_list valist;
+  va_start(valist, format);
+  while (*format != '\0') {
+    if (*format != '%') {
+      putc(*format++, f);
+      continue;
+    }
+    switch (*(++format)) {
+      case 'd':
+      case 'i':
+        WriteInt64ToFile(f, va_arg(valist, int64_t));
+        break;
+      case 'u':
+        WriteUint64ToFile(f, va_arg(valist, uint64_t));
+        break;
+      case 'c':
+        putc((char)va_arg(valist, int), f);
+        break;
+      case 's':
+        WriteStringToFile(f, va_arg(valist, char*));
+        break;
+      case 'b':
+        WriteStringToFile(f, va_arg(valist, int) ? "true" : "false");
+        break;
+      case 'B':
+        WriteStringToFile(f, va_arg(valist, int) ? "TRUE" : "FALSE");
+        break;
+      default:
+        putc('%', f);
+        putc(*format, f);
+        break;
+    }
+    format++;
+  }
+  va_end(valist);
+  return fclose(f) == 0;
+}
+
+bool AppendFormatToFile(const char *file_path, const char *format, ...) {
+  FILE *f = fopen(file_path, "ab");
+  if (f == NULL) {
+    return false;
+  }
+  va_list valist;
+  va_start(valist, format);
+  while (*format != '\0') {
+    if (*format != '%') {
+      putc(*format++, f);
+      continue;
+    }
+    switch (*(++format)) {
+      case 'd':
+      case 'i':
+        WriteInt64ToFile(f, va_arg(valist, int64_t));
+        break;
+      case 'u':
+        WriteUint64ToFile(f, va_arg(valist, uint64_t));
+        break;
+      case 'c':
+        putc((char)va_arg(valist, int), f);
+        break;
+      case 's':
+        WriteStringToFile(f, va_arg(valist, char*));
+        break;
+      case 'b':
+        WriteStringToFile(f, va_arg(valist, int) ? "true" : "false");
+        break;
+      case 'B':
+        WriteStringToFile(f, va_arg(valist, int) ? "TRUE" : "FALSE");
+        break;
+      default:
+        putc('%', f);
+        putc(*format, f);
+        break;
+    }
+    format++;
+  }
+  va_end(valist);
+  return fclose(f) == 0;
+}
+
+inline void WriteCharToStdOut(char c) {
+  putc(c, stdout);
+}
+
+inline void WriteCharToStdErr(char c) {
+  putc(c, stderr);
 }
 
 #pragma endregion
@@ -897,9 +1397,6 @@ inline void FreeMemoryAllocation(MemoryAllocation *ma) {
   free(ma->memory);
 }
 
-/*
-djb2 hash: http://www.cse.yorku.ca/~oz/hash.html
-*/
 inline uint64_t Hash(const char *s) {
   unsigned char *us = (unsigned char*)s;
   uint64_t hash = 5381;
@@ -1019,17 +1516,87 @@ inline char* CharToStringAlloc(char c) {
   return sb.string;
 }
 
-inline bool Int32ToStringToBuffer(char *buffer, size_t buffer_size, int x) {
-  return _itoa_s(x, buffer, buffer_size, 10) == 0;
-}
-
-inline bool Int64ToStringToBuffer(char *buffer, size_t buffer_size, int64_t x) {
-  snprintf(buffer, buffer_size, "%lld", x);
+inline bool Int32ToStringToBuffer(char *buffer, size_t buffer_size, int32_t value, int32_t base) {
+  if (base < 2 || base > 36) {
+    *buffer = '\0';
+    return false;
+  }
+  char *ptr1 = buffer;
+  while (true) {
+    if (--buffer_size == 0) {
+      return false;
+    }
+    int tmp = value;
+    value /= base;
+    *ptr1++ = "zyxwvutsrqponmlkjihgfedcba9876543210123456789abcdefghijklmnopqrstuvwxyz"[35 + (tmp - value * base)];
+    if (value == 0) {
+      if (tmp < 0) {
+        *ptr1++ = '-';
+      }
+      *ptr1-- = '\0';
+      break;
+    }
+  }
+  while(buffer < ptr1) {
+    char tmp = *ptr1;
+    *ptr1-- = *buffer;
+    *buffer++ = tmp;
+  }
   return true;
 }
 
-inline bool Uint64ToStringToBuffer(char *buffer, size_t buffer_size, uint64_t x) {
-  snprintf(buffer, buffer_size, "%llu", x);
+inline bool Int64ToStringToBuffer(char *buffer, size_t buffer_size, int64_t value, int32_t base) {
+  if (base < 2 || base > 36) {
+    *buffer = '\0';
+    return false;
+  }
+  char *ptr1 = buffer;
+  while (true) {
+    if (--buffer_size == 0) {
+      return false;
+    }
+    int tmp = value;
+    value /= base;
+    *ptr1++ = "zyxwvutsrqponmlkjihgfedcba9876543210123456789abcdefghijklmnopqrstuvwxyz"[35 + (tmp - value * base)];
+    if (value == 0) {
+      if (tmp < 0) {
+        *ptr1++ = '-';
+      }
+      *ptr1-- = '\0';
+      break;
+    }
+  }
+  while(buffer < ptr1) {
+    char tmp = *ptr1;
+    *ptr1-- = *buffer;
+    *buffer++ = tmp;
+  }
+  return true;
+}
+
+inline bool Uint64ToStringToBuffer(char *buffer, size_t buffer_size, uint64_t value, int32_t base) {
+  if (base < 2 || base > 36) {
+    *buffer = '\0';
+    return false;
+  }
+  char *ptr1 = buffer;
+  while (true) {
+    if (--buffer_size == 0) {
+      return false;
+    }
+    uint64_t tmp = value;
+    value /= base;
+    *ptr1++ = "zyxwvutsrqponmlkjihgfedcba9876543210123456789abcdefghijklmnopqrstuvwxyz"[35 + (tmp - value * base)];
+    if (value == 0) {
+      *ptr1-- = '\0';
+      break;
+    }
+  }
+  while(buffer < ptr1) {
+    char tmp = *ptr1;
+    *ptr1-- = *buffer;
+    *buffer++ = tmp;
+  }
   return true;
 }
 

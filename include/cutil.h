@@ -79,6 +79,9 @@ char* StringDuplicate(const char *s);
 bool  StringsJoinToBuffer(char *buffer, size_t buffer_size, char **strings, uint64_t number_of_strings, char *separator);
 char* StringsJoinAlloc(char **strings, uint64_t number_of_strings, char *separator);
 
+void Sprintf(char *buffer, size_t buffer_size, const char *format, ...);
+void Sappendf(char *buffer, size_t buffer_size, const char *format, ...);
+
 #pragma endregion
 #pragma region String Builder
 
@@ -100,7 +103,7 @@ bool StringBuilderAddString(StringBuilder *sb, const char *s);
 bool StringBuilderReadFile(StringBuilder *sb, const char *file_path);
 bool StringBuilderClear(StringBuilder *sb);
 
-// TODO: StringBuilderPrintf
+bool StringBuilderPrintf(StringBuilder *sb, const char *format, ...);
 
 #pragma endregion
 #pragma region File System
@@ -124,12 +127,14 @@ char* PathExtAlloc(const char *file_path);
 #pragma endregion
 #pragma region IO
 
-// Depends on stdio.h
-#define DebugLine(fmt, ...)\
-  fprintf(stderr, "[%s:%d %s] " fmt "\n", __FILE__, __LINE__, __func__, ##__VA_ARGS__)
+#define Println(fmt, ...)\
+  Printf(fmt "\n", ##__VA_ARGS__)
 
-#define PrintLine(fmt, ...)\
-  fprintf(stdout, fmt "\n", ##__VA_ARGS__)
+#define Errorln(fmt, ...)\
+  Errorf(fmt "\n", ##__VA_ARGS__)
+
+#define DebugLog(fmt, ...)\
+  Errorf("[%s:%d %s] " fmt "\n", __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 
 bool  ReadFileToBuffer(char *buffer, size_t buffer_size, const char *file_path);
 char* ReadFileAlloc(const char *file_path);
@@ -141,16 +146,28 @@ char* ReadUserInputAlloc(void);
 bool WriteToFile(const char *file_path, const char *s);
 bool AppendToFile(const char *file_path, const char *s);
 
-void WriteToStdOut(const char *s);
-void WriteToStdErr(const char *s);
+void WriteStringToStdOut(const char *s);
+void WriteStringToStdErr(const char *s);
 
-// TODO: WriteFormatToFile, AppendFormatToFile
+void WriteInt64ToStdOut(int64_t value);
+void WriteInt64ToStdErr(int64_t value);
+
+void WriteUint64ToStdOut(uint64_t value);
+void WriteUint64ToStdErr(uint64_t value);
+
+void Printf(const char *format, ...);
+void Errorf(const char *format, ...);
+
+bool WriteFormatToFile(const char *file_path, const char *format, ...);
+bool AppendFormatToFile(const char *file_path, const char *format, ...);
+
+void WriteCharToStdOut(char c);
+void WriteCharToStdErr(char c);
 
 #pragma endregion
 #pragma region Util
 
 #define ArraySize(array) (sizeof(array) / sizeof(*(array)))
-#define BoolToString(b) ((b) ? "TRUE" : "FALSE")
 
 typedef struct Allocation {
   void *memory;
@@ -205,11 +222,11 @@ Url UrlParse(const char *s);
  * The number of bits will equal to the size of the data type.
  * @param x The number to convert to bits.
 */
-#define BitPrint(x)\
+#define BitPrintln(x)\
 do {\
   uint64_t i = 1ULL << (sizeof(x) * 8 - 1);\
-  do putchar((((x) & i) > 0) + 48); while (i >>= 1);\
-  printf("\n");\
+  do WriteCharToStdOut((((x) & i) > 0) + 48); while (i >>= 1);\
+  WriteCharToStdOut('\n');\
 } while (0)
 
 #pragma endregion
@@ -222,9 +239,9 @@ int64_t StringToInt64(const char *s);
 bool  CharToStringToBuffer(char *buffer, size_t buffer_size, char c);
 char* CharToStringAlloc(char c);
 
-bool Int32ToStringToBuffer(char *buffer, size_t buffer_size, int x);
-bool Int64ToStringToBuffer(char *buffer, size_t buffer_size, int64_t x);
-bool Uint64ToStringToBuffer(char *buffer, size_t buffer_size, uint64_t x);
+bool Int32ToStringToBuffer(char *buffer, size_t buffer_size, int32_t value, int32_t base);
+bool Int64ToStringToBuffer(char *buffer, size_t buffer_size, int64_t value, int32_t base);
+bool Uint64ToStringToBuffer(char *buffer, size_t buffer_size, uint64_t value, int32_t base);
 
 #pragma endregion
 #pragma region Hash map
